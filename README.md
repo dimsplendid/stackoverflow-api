@@ -35,3 +35,15 @@ $ sqlx migrate revert
 ```bash
 $ cargo run
 ```
+
+to show the log
+
+`cmd`
+```
+set RUST_LOG=info
+cargo run
+```
+`bash`
+```
+RUST_LOG=info cargo run
+```
