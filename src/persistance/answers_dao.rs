@@ -57,18 +57,15 @@ impl AnswersDao for AnswersDaoImpl {
             .fetch_one(&self.db)
             .await
             .map_err(|e| {
-                // TODO: Underdstand why we need to use so many layers of match statements here.
-                match e.as_database_error() {
-                    Some(db_err) => match db_err.code() {
-                        Some(code) if code == postgres_error_codes::FOREIGN_KEY_VIOLATION => {
-                            DBError::InvalidUUID(db_err.message().to_string())
+                if let sqlx::Error::Database(db_err) = &e {
+                    if let Some(code) = db_err.code() {
+                        if code == postgres_error_codes::FOREIGN_KEY_VIOLATION {
+                            return DBError::InvalidUUID(db_err.message().to_string());
                         }
-                        _ => DBError::Other(Box::new(e)),
-                    },
-                    _ => DBError::Other(Box::new(e)),
+                    }
                 }
+                DBError::Other(Box::new(e))
             })?;
-            
 
         // Populate the AnswerDetail fields using `record`.
         Ok(AnswerDetail {
