@@ -2,6 +2,8 @@ use rocket::serde::json::Json;
 
 use crate::models::*;
 
+mod handdlers_inner;
+
 // ---- CRUD for Questions ----
 
 #[post("/question", data = "<question>")]
