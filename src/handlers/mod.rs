@@ -1,52 +1,66 @@
 use rocket::{serde::json::Json, State};
 
-use crate::models::*;
-use crate::persistance::{
-    answers_dao::AnswersDao,
-    questions_dao::QuestionsDao,
+use crate::{
+    models::*,
+    persistance::{answers_dao::AnswersDao, questions_dao::QuestionsDao},
 };
 
 mod handlers_inner;
 
+use handlers_inner::*;
+
+#[derive(Responder)]
+pub enum APIError {
+    #[response(status = 400)]
+    BadRequest(String),
+    #[response(status = 500)]
+    InternalError(String),
+}
+
+impl From<HandlerError> for APIError {
+    fn from(value: HandlerError) -> Self {
+        match value {
+            HandlerError::BadRequest(s) => Self::BadRequest(s),
+            HandlerError::InternalError(s) => Self::InternalError(s),
+        }
+    }
+}
 
 // ---- CRUD for Questions ----
 
 #[post("/question", data = "<question>")]
 pub async fn create_question(
     question: Json<Question>,
-    // Example of how to add state to a route
     questions_dao: &State<Box<dyn QuestionsDao + Sync + Send>>,
-) -> Json<QuestionDetail> {
-    Json (
-        QuestionDetail {
-            question_uuid: "question_uuid".to_owned(),
-            title: "title".to_owned(),
-            description: "description".to_owned(),
-            created_at: "created_at".to_owned()
-        }
-    )
+) -> Result<Json<QuestionDetail>, APIError> {
+    let query = handlers_inner::create_question(question.into_inner(), questions_dao).await;
+    match query {
+        Ok(question_detail) => Ok(Json(question_detail)),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
 
 #[get("/questions")]
 pub async fn read_questions(
-    questions_dao: &State<Box<dyn AnswersDao + Sync + Send>>, // add the appropriate type annotation
-) -> Json<Vec<QuestionDetail>> {
-    Json (
-        vec![QuestionDetail {
-            question_uuid: "question_uuid".to_owned(),
-            title: "title".to_owned(),
-            description: "description".to_owned(),
-            created_at: "created_at".to_owned()
-        }]
-    )
+    questions_dao: &State<Box<dyn QuestionsDao + Sync + Send>>,
+) -> Result<Json<Vec<QuestionDetail>>, APIError> {
+    let query = handlers_inner::read_questions(questions_dao).await;
+    match query {
+        Ok(questions) => Ok(Json(questions)),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
 
 #[delete("/question", data = "<question_uuid>")]
 pub async fn delete_question(
     question_uuid: Json<QuestionId>,
-    questions_dao: &State<Box<dyn AnswersDao + Sync + Send>>, // add the appropriate type annotation
-) {
-    // ...
+    questions_dao: &State<Box<dyn QuestionsDao + Sync + Send>>,
+) -> Result<(), APIError> {
+    let query = handlers_inner::delete_question(question_uuid.into_inner(), questions_dao).await;
+    match query {
+        Ok(_) => Ok(()),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
 
 // ---- CRUD for Answers ----
@@ -54,38 +68,35 @@ pub async fn delete_question(
 #[post("/answer", data = "<answer>")]
 pub async fn create_answer(
     answer: Json<Answer>,
-    // Example of how to add state to a route
     answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>,
-) -> Json<AnswerDetail> {
-    Json (
-        AnswerDetail {
-            answer_uuid: "answer_uuid".to_owned(),
-            question_uuid: "question_uuid".to_owned(),
-            content: "content".to_owned(),
-            created_at: "created_at".to_owned()
-        }
-    )
+) -> Result<Json<AnswerDetail>, APIError> {
+    let query = handlers_inner::create_answer(answer.into_inner(), answers_dao).await;
+    match query {
+        Ok(answer_detail) => Ok(Json(answer_detail)),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
 
 #[get("/answers", data = "<question_uuid>")]
 pub async fn read_answers(
     question_uuid: Json<QuestionId>,
-    answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>, // add the appropriate type annotation
-) -> Json<Vec<AnswerDetail>> {
-    Json (
-        vec![AnswerDetail {
-            answer_uuid: "answer_uuid".to_owned(),
-            question_uuid: "question_uuid".to_owned(),
-            content: "content".to_owned(),
-            created_at: "created_at".to_owned()
-        }]
-    )
+    answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>,
+) -> Result<Json<Vec<AnswerDetail>>, APIError> {
+    let query = handlers_inner::read_answers(question_uuid.into_inner(), answers_dao).await;
+    match query {
+        Ok(answers) => Ok(Json(answers)),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
 
 #[delete("/answer", data = "<answer_uuid>")]
 pub async fn delete_answer(
     answer_uuid: Json<AnswerId>,
-    answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>, // add the appropriate type annotation
-) {
-    // ...
+    answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>,
+) -> Result<(), APIError> {
+    let query = handlers_inner::delete_answer(answer_uuid.into_inner(), answers_dao).await;
+    match query {
+        Ok(_) => Ok(()),
+        Err(e) => Err(APIError::from(e)),
+    }
 }
