@@ -1,65 +1,92 @@
-use rocket::serde::json::Json;
+use rocket::{serde::json::Json, State};
 
 use crate::models::*;
+use crate::persistance::{
+    answers_dao::AnswersDao,
+    questions_dao::QuestionsDao,
+};
 
-mod handdlers_inner;
+mod handlers_inner;
+
 
 // ---- CRUD for Questions ----
 
 #[post("/question", data = "<question>")]
 pub async fn create_question(
     question: Json<Question>,
+    // Example of how to add state to a route
+    questions_dao: &State<Box<dyn QuestionsDao + Sync + Send>>,
 ) -> Json<QuestionDetail> {
-    Json(QuestionDetail {
-        question_uuid: "[UUID of a created question]".to_string(),
-        title: question.title.clone(),
-        description: question.description.clone(),
-        created_at: "2021-08-25T00:00:00Z".to_string(),
-    })
+    Json (
+        QuestionDetail {
+            question_uuid: "question_uuid".to_owned(),
+            title: "title".to_owned(),
+            description: "description".to_owned(),
+            created_at: "created_at".to_owned()
+        }
+    )
 }
 
 #[get("/questions")]
-pub async fn read_questions() -> Json<Vec<QuestionDetail>> {
-    Json(vec![QuestionDetail {
-        question_uuid: "[UUID of a created question]".to_string(),
-        title: "How do I create a REST API?".to_string(),
-        description: "I want to create a REST API using Rust and Rocket.".to_string(),
-        created_at: "2021-08-25T00:00:00Z".to_string(),
-    }])
+pub async fn read_questions(
+    questions_dao: todo!(), // add the appropriate type annotation
+) -> Json<Vec<QuestionDetail>> {
+    Json (
+        vec![QuestionDetail {
+            question_uuid: "question_uuid".to_owned(),
+            title: "title".to_owned(),
+            description: "description".to_owned(),
+            created_at: "created_at".to_owned()
+        }]
+    )
 }
 
 #[delete("/question", data = "<question_uuid>")]
 pub async fn delete_question(
-    question_uuid: Json<QuestionId>
+    question_uuid: Json<QuestionId>,
+    questions_dao: todo!(), // add the appropriate type annotation
 ) {
+    // ...
 }
 
 // ---- CRUD for Answers ----
 
 #[post("/answer", data = "<answer>")]
-pub async fn create_answer (
+pub async fn create_answer(
     answer: Json<Answer>,
+    // Example of how to add state to a route
+    // TODO: fix compile time error importing AnswersDao
+    answers_dao: &State<Box<dyn AnswersDao + Send + Sync>>,
 ) -> Json<AnswerDetail> {
-    Json(AnswerDetail {
-        answer_uuid: "[UUID of a created answer]".to_string(),
-        question_uuid: answer.question_uuid.clone(),
-        content: answer.content.clone(),
-        created_at: "2021-08-25T00:00:00Z".to_string(),
-    })
+    Json (
+        AnswerDetail {
+            answer_uuid: "answer_uuid".to_owned(),
+            question_uuid: "question_uuid".to_owned(),
+            content: "content".to_owned(),
+            created_at: "created_at".to_owned()
+        }
+    )
 }
 
-#[get("/answers")]
-pub async fn read_answers() -> Json<Vec<AnswerDetail>> {
-    Json(vec![AnswerDetail {
-        answer_uuid: "[UUID of a created answer]".to_string(),
-        question_uuid: "[UUID of a created question]".to_string(),
-        content: "You should use Rocket!".to_string(),
-        created_at: "2021-08-25T00:00:00Z".to_string(),
-    }])
+#[get("/answers", data = "<question_uuid>")]
+pub async fn read_answers(
+    question_uuid: Json<QuestionId>,
+    answers_dao: todo!(), // add the appropriate type annotation
+) -> Json<Vec<AnswerDetail>> {
+    Json (
+        vec![AnswerDetail {
+            answer_uuid: "answer_uuid".to_owned(),
+            question_uuid: "question_uuid".to_owned(),
+            content: "content".to_owned(),
+            created_at: "created_at".to_owned()
+        }]
+    )
 }
 
 #[delete("/answer", data = "<answer_uuid>")]
 pub async fn delete_answer(
-    answer_uuid: Json<AnswerId>
+    answer_uuid: Json<AnswerId>,
+    answers_dao: todo!(), // add the appropriate type annotation
 ) {
+    // ...
 }
